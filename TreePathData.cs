@@ -27,7 +27,7 @@ namespace FileCopy
             this.ParentNode = parentNode;
         }
 
-        /// <summary>階層(下の階層ほど値が小さい)</summary>
+        /// <summary>階層</summary>
         public int Hierarchy { get; set; }
 
         /// <summary>この要素の格納値（ディレクトリ名）</summary>
@@ -80,7 +80,7 @@ namespace FileCopy
         public static void CreateTreePath(int hierarchy, string copyPath, TreePathData parentNode)
         {
             // パスの先頭から"\"で区切ったディレクトリ名orファイル名だけ取得
-            var length = copyPath.IndexOf('\\');
+            var length = copyPath.IndexOf(@"\");
             if (length == -1) length = copyPath.Length;
             var dirName = copyPath.Substring(0, length);
 
@@ -99,7 +99,7 @@ namespace FileCopy
 
             // 元のパスからディレクトリ名orファイル名と、先頭の"\"を除外
             // ファイルまで完了したらブランクをセット
-            if (copyPath.IndexOf('\\') > -1)
+            if (copyPath.IndexOf(@"\") > -1)
             {
                 copyPath = copyPath.Substring(length + 1);
             }
