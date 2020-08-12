@@ -115,32 +115,31 @@ namespace FileCopy
         /// <summary>
         /// ディレクトリのコピー
         /// </summary>
-        /// <param name="treePath">コピー元フォルダ階層</param>
+        /// <param name="upperPath">上位パス</param>
+        /// <param name="sourcePath">コピー元フォルダ階層</param>
         /// <param name="destPath">コピー先パス</param>
-        private void DirectoryCopy(string upperPath, TreePathData treePath, string destPath)
+        private void DirectoryCopy(string upperPath, TreePathData sourcePath, string destPath)
         {
-            var bolCopy = true;
-            if (treePath.Hierarchy == -1) bolCopy = false;
-            if (treePath.IsFile) bolCopy = false;
-
+            // コピー先ディレクトリ
             var sb = new StringBuilder();
             sb.Append(destPath);
-            if (bolCopy)
+            if (sourcePath.IsValidPath)
             {
                 sb.Append(@"\");
-                sb.Append(treePath.DirName);
+                sb.Append(sourcePath.DirName);
             }
             DirectoryInfo destDirectory = new DirectoryInfo(sb.ToString());
 
-            if (bolCopy)
+            if (sourcePath.IsValidPath)
             {
+                // コピー元ディレクトリ
                 sb.Clear();
                 sb.Append(upperPath);
                 sb.Append(@"\");
-                sb.Append(treePath.DirName);
+                sb.Append(sourcePath.DirName);
                 DirectoryInfo sourceDirectory = new DirectoryInfo(sb.ToString());
 
-                // コピー先のディレクトリがなければ作成する
+                // コピー先のディレクトリを作成する
                 if (destDirectory.Exists == false)
                 {
                     destDirectory.Create();
@@ -151,12 +150,14 @@ namespace FileCopy
                 sb.Clear();
                 sb.Append(upperPath);
                 sb.Append(@"\");
-                sb.Append(treePath.DirName);
+                sb.Append(sourcePath.DirName);
                 upperPath = sb.ToString();
             }
 
-            foreach (var childPath in treePath.ChildList)
+            foreach (var childPath in sourcePath.ChildList)
             {
+                if (childPath.IsFile) continue;
+
                 // 下位のディレクトリをコピー（再帰を使用）
                 this.DirectoryCopy(upperPath, childPath, destDirectory.FullName);
             }
@@ -165,46 +166,57 @@ namespace FileCopy
         /// <summary>
         /// ファイルコピー
         /// </summary>
-        private void FileCopy(string upperPath, TreePathData treePath, string destPath)
+        /// <param name="upperPath">上位パス</param>
+        /// <param name="sourcePath">コピー元フォルダ階層</param>
+        /// <param name="destPath">コピー先パス</param>
+        private void FileCopy(string upperPath, TreePathData sourcePath, string destPath)
         {
+            // コピー先ファイル
             var sb = new StringBuilder();
             sb.Append(destPath);
-            if (treePath.Hierarchy != -1)
+            if (sourcePath.IsValidPath)
             {
                 sb.Append(@"\");
-                sb.Append(treePath.DirName);
+                sb.Append(sourcePath.DirName);
             }
             FileInfo destFile = new FileInfo(sb.ToString());
 
-            if (treePath.IsFile)
+            if (sourcePath.IsValidPath)
             {
-                sb.Clear();
-                sb.Append(upperPath);
-                sb.Append(@"\");
-                sb.Append(treePath.DirName);
-                FileInfo sourceFile = new FileInfo(sb.ToString());
+                var bolCopy = true;
+                if (!sourcePath.IsFile) bolCopy = false;
+                if (!this.checkBox1.Checked)
+                {
+                    if (sourcePath.IsUnneedFile) bolCopy = false;
+                }
 
-                File.Copy(sourceFile.FullName, destFile.FullName, true);
-            }
+                if (bolCopy)
+                {
+                    // コピー元ファイル
+                    sb.Clear();
+                    sb.Append(upperPath);
+                    sb.Append(@"\");
+                    sb.Append(sourcePath.DirName);
+                    FileInfo sourceFile = new FileInfo(sb.ToString());
 
-            if (treePath.Hierarchy != -1)
-            {
+                    File.Copy(sourceFile.FullName, destFile.FullName, true);
+                }
+
                 // 上位のパスにカレントパスをくっつける
                 sb.Clear();
                 sb.Append(upperPath);
                 sb.Append(@"\");
-                sb.Append(treePath.DirName);
+                sb.Append(sourcePath.DirName);
                 upperPath = sb.ToString();
             }
 
-            foreach (var childPath in treePath.ChildList)
+            foreach (var childPath in sourcePath.ChildList)
             {
                 // 子要素のファイルコピー（再帰を使用）
                 this.FileCopy(upperPath, childPath, destFile.FullName);
             }
         }
 
-        // label1 DragEnter
         private void label1_DragEnter(object sender, DragEventArgs e)
         {
             if (e.Data.GetDataPresent(DataFormats.FileDrop))
@@ -217,7 +229,6 @@ namespace FileCopy
             }
         }
 
-        // label1 DragDrop
         private void label1_DragDrop(object sender, DragEventArgs e)
         {
             // ファイルが渡されていなければ、何もしない

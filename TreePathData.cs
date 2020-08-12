@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 
 namespace FileCopy
 {
@@ -43,6 +44,23 @@ namespace FileCopy
         public bool IsFile
         {
             get { return this.ChildList.Count == 0; }
+        }
+
+        /// <summary>有効なパスか</summary>
+        public bool IsValidPath
+        {
+            get { return this.Hierarchy > -1; }
+        }
+
+        /// <summary>不要なファイルか</summary>
+        public bool IsUnneedFile
+        {
+            get
+            {
+                return this.IsFile
+                    && (Path.GetExtension(this.DirName) == ".dll"
+                    || Path.GetExtension(this.DirName) == ".exe");
+            }
         }
 
         /// <summary>
